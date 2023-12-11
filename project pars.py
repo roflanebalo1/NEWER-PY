@@ -4,6 +4,8 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver import Chrome
+from selenium.webdriver.remote.webelement import WebElement
 import json
 import requests
 from bs4 import BeautifulSoup
@@ -11,6 +13,7 @@ from bs4 import BeautifulSoup
 class BaseScrapper():
     def __init__(self) -> None:
         pass
+
     
     @staticmethod
     def create_driver():
@@ -36,6 +39,7 @@ class BaseScrapper():
 
             hashtags_scrapper.songs_func()
             hashtags_scrapper.breakout_func()
+            
 
 
 
@@ -44,15 +48,31 @@ class BaseScrapper():
         except KeyboardInterrupt:
             driver.quit()
 
+
 class HashtagsScrapper(BaseScrapper):
     def __init__(self, driver) -> None:
         super().__init__()
         self.driver = driver
+    
+
+    def smooth_scroll(self,elem: WebElement):
+        self.driver.execute_script(
+            """arguments[0].scrollIntoView({block: "center", behavior: "smooth"});""", elem
+        ) 
+
+    def smooth_click(self,elem: WebElement):
+        self.driver.execute_script(
+            """arguments[0].click({block: "center", behavior: "smooth"});""", elem
+        ) 
         
     def hashtags_func(self):
-        for i in range(1, 11):
-            self.driver.execute_script("window.scrollBy(0,1100)","")
-            sleep(4)
+        while True:
+            hashtags_elements = self.driver.find_elements(By.CLASS_NAME, "CommonDataList_cardWrapper__kHTJP")
+            last_hashtag = hashtags_elements[-1]
+            self.smooth_scroll(last_hashtag)
+            sleep(3)
+            if len(hashtags_elements) == 100:
+                break
         hashtags_elements = self.driver.find_elements(By.CLASS_NAME, "CardPc_titleText__RYOWo")
         hashtags = []
         for element in hashtags_elements:
@@ -92,8 +112,9 @@ class HashtagsScrapper(BaseScrapper):
 
     def breakout_func(self):
         self.driver.execute_script("window.scrollBy(13500,0)","")
-        breakout_button = self.driver.find_element(By.PARTIAL_LINK_TEXT, "Breakout")
-        breakout_button.click()
+        breakout_button = self.driver.find_elements(By.CLASS_NAME, "ContentTab_itemLabelText__hiCCd")
+        breakout_click = breakout_button[1]
+        self.smooth_click(breakout_click)
         sleep(5)
         for i in range(1, 10):
             self.driver.execute_script("window.scrollBy(0,1200)","")
